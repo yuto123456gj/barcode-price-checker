@@ -72,7 +72,7 @@
   /* ---------------------------------------------------------------- */
 
   var el = {};
-  ['dot', 'storeState', 'viewport', 'video', 'viewportIdle', 'frame', 'laser',
+  ['dot', 'storeState', 'viewport', 'video', 'viewportIdle', 'frame', 'laser', 'diag',
    'scanBtn', 'torchBtn', 'photoBtn', 'photoInput',
    'code', 'codeHint', 'breakdown', 'digits', 'breakdownNote',
    'known', 'knownName', 'knownCount', 'nameField', 'name',
@@ -103,6 +103,9 @@
     reader: null,
     timer: null,
     detector: null,
+    engine: '—',
+    attempts: 0,
+    lastError: '',
     lastCode: null,
     lastAt: 0
   };
@@ -111,16 +114,32 @@
     return typeof window.BarcodeDetector === 'function';
   }
 
-  function makeZxingReader() {
-    var hints = new Map();
+  /**
+   * @param tryHarder 静止画では精度優先。ライブ映像では1フレームあたりを速くするため false。
+   */
+  function makeZxingReader(tryHarder) {
     var Z = window.ZXing;
+    var hints = new Map();
     hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [
       Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8,
       Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E,
       Z.BarcodeFormat.CODE_128
     ]);
-    hints.set(Z.DecodeHintType.TRY_HARDER, true);
-    return new Z.BrowserMultiFormatReader(hints, 180);
+    if (tryHarder) hints.set(Z.DecodeHintType.TRY_HARDER, true);
+    return new Z.BrowserMultiFormatReader(hints);
+  }
+
+  /** 画面に出す診断。読めないときに原因を切り分けるため。 */
+  function setDiag(text) {
+    el.diag.textContent = text;
+    el.diag.hidden = !text;
+  }
+
+  function diagLine() {
+    return cam.engine
+      + ' · ' + (el.video.videoWidth || 0) + '×' + (el.video.videoHeight || 0)
+      + ' · 試行' + cam.attempts + '回'
+      + (cam.lastError ? ' · ' + cam.lastError : '');
   }
 
   async function startScan() {
@@ -161,6 +180,10 @@
     }
 
     cam.scanning = true;
+    // Safari は属性だけだと自動再生を拒むことがあるのでプロパティでも立てる。
+    el.video.muted = true;
+    el.video.playsInline = true;
+    el.video.setAttribute('playsinline', '');
     el.video.srcObject = cam.stream;
     el.video.hidden = false;
     el.viewportIdle.hidden = true;
@@ -176,31 +199,58 @@
     setupTorch();
 
     if (supportsDetector()) {
+      cam.engine = 'BarcodeDetector';
       cam.detector = new window.BarcodeDetector({
         formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
       });
-      detectLoop();
     } else if (window.ZXing) {
-      cam.reader = makeZxingReader();
-      cam.reader.decodeFromVideoElement(el.video, function (result) {
-        if (result) onDetected(result.getText());
-      }).catch(function () { /* reset() 時の中断は無視 */ });
+      cam.engine = 'ZXing';
+      cam.reader = makeZxingReader(false);
     } else {
       hintError('読み取りライブラリを読み込めませんでした。手入力をお使いください。');
       stopScan();
+      return;
     }
+
+    cam.attempts = 0;
+    cam.lastError = '';
+    setDiag(diagLine());
+    scanLoop();
   }
 
-  async function detectLoop() {
+  /**
+   * 1フレームずつ読む自前のループ。
+   * ZXing の decodeFromVideoElement は「1回だけ」読む版なので連続スキャンには使えない。
+   * decode() を直接呼んで、見つからなければ次のフレームへ進める。
+   */
+  async function scanLoop() {
     if (!cam.scanning) return;
+
+    // 映像が来る前は videoWidth が 0。準備できるまで待つ。
+    if (!el.video.videoWidth) {
+      cam.timer = setTimeout(scanLoop, 150);
+      return;
+    }
+
+    cam.attempts++;
+
     try {
-      var found = await cam.detector.detect(el.video);
-      if (found && found.length) {
-        onDetected(found[0].rawValue);
-        return;
+      if (cam.detector) {
+        var found = await cam.detector.detect(el.video);
+        if (found && found.length) { onDetected(found[0].rawValue); return; }
+      } else {
+        var result = cam.reader.decode(el.video);   // 見つからなければ throw
+        if (result) { onDetected(result.getText()); return; }
       }
-    } catch (e) { /* フレームが未準備なだけのことが多い */ }
-    cam.timer = setTimeout(detectLoop, 120);
+      cam.lastError = '';
+    } catch (error) {
+      // バーコードが写っていないフレームは NotFoundException。これは正常。
+      var name = (error && (error.name || error.constructor && error.constructor.name)) || '';
+      cam.lastError = /NotFound|Checksum|Format/.test(name) ? '' : name;
+    }
+
+    if (cam.attempts % 5 === 0) setDiag(diagLine());
+    cam.timer = setTimeout(scanLoop, cam.detector ? 120 : 180);
   }
 
   function setupTorch() {
@@ -243,6 +293,7 @@
     el.scanBtn.disabled = false;
     el.scanBtn.textContent = 'カメラでスキャン';
     el.scanBtn.setAttribute('aria-pressed', 'false');
+    setDiag('');
   }
 
   /** 読み取り成功。同じコードの連続ヒットは2秒間無視する。 */
@@ -311,7 +362,7 @@
       var img = new Image();
       img.src = canvas.toDataURL('image/png');
       await img.decode();
-      var result = await makeZxingReader().decodeFromImage(img);
+      var result = await makeZxingReader(true).decodeFromImage(img);
       return result.getText();
     }
     return null;
