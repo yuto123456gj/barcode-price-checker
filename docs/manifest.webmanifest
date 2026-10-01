@@ -1,0 +1,16 @@
+{
+  "name": "単価ウォッチ",
+  "short_name": "単価ウォッチ",
+  "description": "バーコードをかざすだけで、その値段が過去の記録より安いかを単価で判定します。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f4f2",
+  "theme_color": "#d93a26",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,1291 @@
+<title>単価ウォッチ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #f6f4f2;
+    --card: #ffffff;
+    --card-2: #fbfaf9;
+    --ink: #191b1f;
+    --ink-2: #5b5f68;
+    --ink-3: #8d919b;
+    --line: #e3ddd7;
+    --line-2: #efeae5;
+    --accent: #d93a26;
+    --warm: #d4802f;
+    --cool: #3d5a80;
+    --shadow: 0 1px 2px rgba(25, 27, 31, .06), 0 8px 24px -16px rgba(25, 27, 31, .28);
+
+    --sans: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+    --num: "Oswald", "Zen Kaku Gothic New", system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #131417;
+      --card: #1c1e23;
+      --card-2: #212429;
+      --ink: #f1efec;
+      --ink-2: #a8acb5;
+      --ink-3: #787d87;
+      --line: #2e3138;
+      --line-2: #262930;
+      --accent: #ff5f42;
+      --warm: #eb9b4e;
+      --cool: #7fa6cc;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -16px rgba(0, 0, 0, .8);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #131417;
+    --card: #1c1e23;
+    --card-2: #212429;
+    --ink: #f1efec;
+    --ink-2: #a8acb5;
+    --ink-3: #787d87;
+    --line: #2e3138;
+    --line-2: #262930;
+    --accent: #ff5f42;
+    --warm: #eb9b4e;
+    --cool: #7fa6cc;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -16px rgba(0, 0, 0, .8);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 520px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 0 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* ---- header ---- */
+  header {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line-2);
+    margin-inline: -16px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+
+  .store-state {
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: .06em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    flex: none;
+  }
+
+  .dot.live { background: #3f9b5c; }
+  .dot.local { background: var(--warm); }
+
+  /* ---- cards ---- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    color: var(--ink-3);
+    margin: 0 0 10px;
+  }
+
+  /* ---- code entry ---- */
+  .code-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select {
+    width: 100%;
+    min-width: 0;
+    font-family: var(--sans);
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px 12px;
+  }
+
+  #code {
+    font-family: var(--mono);
+    letter-spacing: .08em;
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  button:disabled { opacity: .45; cursor: default; }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+    font-size: 16px;
+    padding: 15px;
+    letter-spacing: .06em;
+  }
+
+  .btn-camera {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-camera svg { display: block; }
+
+  .hint {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin: 8px 0 0;
+  }
+
+  .hint.error { color: var(--accent); }
+
+  /* ---- barcode breakdown (instore) ---- */
+  .breakdown {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--card-2);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+  }
+
+  .digits {
+    font-family: var(--mono);
+    font-size: 15px;
+    letter-spacing: .12em;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+  }
+
+  .seg {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .seg b {
+    font-weight: 400;
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 2px;
+  }
+
+  .seg.is-item b { border-bottom-color: var(--cool); }
+  .seg.is-value b { border-bottom-color: var(--accent); }
+
+  .seg small {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: .08em;
+    color: var(--ink-3);
+    margin-top: 3px;
+  }
+
+  /* ---- fields ---- */
+  .fields {
+    display: grid;
+    gap: 12px;
+  }
+
+  .field { display: grid; gap: 5px; }
+
+  .field > label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-2);
+    letter-spacing: .04em;
+  }
+
+  .field .opt { color: var(--ink-3); font-weight: 400; }
+
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 96px;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .prefill {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+
+  /* ---- product line ---- */
+  .known {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--card-2);
+    border-radius: 8px;
+    border: 1px solid var(--line-2);
+  }
+
+  .known strong { font-size: 15px; font-weight: 700; }
+
+  .known span { font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+
+  /* ---- verdict ---- */
+  .verdict {
+    border-radius: 12px;
+    padding: 20px 18px;
+    color: #fff;
+    background: var(--ink);
+    display: grid;
+    gap: 14px;
+  }
+
+  .verdict.s-LOWEST_EVER { background: var(--accent); }
+  .verdict.s-GOOD_DEAL { background: var(--warm); }
+  .verdict.s-HIGH { background: var(--cool); }
+  .verdict.s-AVERAGE { background: #6b7079; }
+  .verdict.s-FIRST_SCAN { background: var(--ink); }
+
+  .verdict-label {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    margin: 0;
+  }
+
+  .verdict-price {
+    font-family: var(--num);
+    font-size: 54px;
+    font-weight: 600;
+    line-height: .95;
+    letter-spacing: .01em;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .verdict-price em {
+    font-family: var(--sans);
+    font-style: normal;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: .85;
+  }
+
+  .verdict-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    border-top: 1px solid rgba(255, 255, 255, .28);
+    padding-top: 12px;
+  }
+
+  .verdict-meta div { min-width: 0; }
+
+  .verdict-meta dt {
+    font-size: 10px;
+    letter-spacing: .1em;
+    opacity: .8;
+    margin: 0 0 2px;
+  }
+
+  .verdict-meta dd {
+    margin: 0;
+    font-family: var(--num);
+    font-size: 19px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .verdict-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.55;
+    opacity: .9;
+  }
+
+  /* ---- lists ---- */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 3px;
+  }
+
+  .tabs button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-2);
+    border-radius: 6px;
+  }
+
+  .tabs button[aria-selected="true"] {
+    background: var(--card);
+    color: var(--ink);
+    font-weight: 700;
+    box-shadow: var(--shadow);
+  }
+
+  ul.rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1px;
+    background: var(--line-2);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  ul.rows li {
+    background: var(--card);
+    padding: 11px 13px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  ul.rows li.sample { opacity: .55; }
+
+  .row-main { min-width: 0; }
+
+  .row-title {
+    font-size: 14px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row-sub {
+    font-size: 11px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .row-value {
+    font-family: var(--num);
+    font-size: 19px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .row-value.best { color: var(--accent); }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    color: var(--ink-3);
+    margin-left: 6px;
+    vertical-align: 1px;
+  }
+
+  .empty {
+    font-size: 13px;
+    color: var(--ink-3);
+    text-align: center;
+    padding: 22px 8px;
+    margin: 0;
+  }
+
+  footer {
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--ink-3);
+    border-top: 1px solid var(--line-2);
+    padding-top: 14px;
+  }
+
+  footer p { margin: 0 0 4px; }
+
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .verdict { animation: rise .22s ease-out; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>単価ウォッチ</h1>
+    <p class="store-state"><span class="dot" id="dot"></span><span id="storeState">読み込み中</span></p>
+  </header>
+
+  <!-- ============ 1. コード ============ -->
+  <section class="card">
+    <p class="eyebrow">バーコード</p>
+
+    <div class="code-row">
+      <label class="sr" for="code">JANコード／インストアコード</label>
+      <input id="code" type="text" inputmode="numeric" autocomplete="off"
+             placeholder="4901777300446" maxlength="17">
+      <button type="button" class="btn-camera" id="photoBtn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2L8 5h8l1.5 2h2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/>
+          <circle cx="12" cy="12.5" r="3.4"/>
+        </svg>
+        写真
+      </button>
+      <input id="photoInput" class="sr" type="file" accept="image/*" capture="environment">
+    </div>
+
+    <p class="hint" id="codeHint">数字を入力するか、値札のバーコードを撮影してください。</p>
+
+    <div class="breakdown" id="breakdown" hidden>
+      <div class="digits" id="digits"></div>
+      <p class="hint" id="breakdownNote" style="margin-top:9px"></p>
+    </div>
+  </section>
+
+  <!-- ============ 2. 商品と価格 ============ -->
+  <section class="card">
+    <p class="eyebrow">商品と価格</p>
+
+    <div class="fields">
+      <div class="known" id="known" hidden>
+        <strong id="knownName"></strong>
+        <span id="knownCount"></span>
+      </div>
+
+      <div class="field" id="nameField">
+        <label for="name">商品名</label>
+        <input id="name" type="text" autocomplete="off" placeholder="国産豚バラ肉 100g">
+      </div>
+
+      <div class="field">
+        <label for="price">価格（円）<span class="prefill" id="pricePrefill" hidden>バーコードから取得</span></label>
+        <input id="price" type="number" inputmode="numeric" min="0" step="1" placeholder="298">
+      </div>
+
+      <div class="field">
+        <label for="qty">容量・個数 <span class="opt">任意／入れると単価で比べます</span></label>
+        <div class="split">
+          <input id="qty" type="number" inputmode="decimal" min="0" step="any" placeholder="500">
+          <select id="unit" aria-label="単位">
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+            <option value="個">個</option>
+            <option value="枚">枚</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="store">店舗 <span class="opt">任意</span></label>
+        <input id="store" type="text" autocomplete="off" placeholder="スーパーA">
+      </div>
+
+      <button type="button" class="btn-primary" id="checkBtn">判定する</button>
+    </div>
+  </section>
+
+  <!-- ============ 3. 判定 ============ -->
+  <section id="verdictWrap" hidden>
+    <div class="verdict" id="verdict">
+      <div>
+        <p class="verdict-label" id="verdictLabel"></p>
+        <div class="verdict-price" id="verdictPrice"></div>
+      </div>
+      <dl class="verdict-meta" id="verdictMeta"></dl>
+      <p class="verdict-note" id="verdictNote"></p>
+    </div>
+    <div style="margin-top:10px">
+      <button type="button" class="btn-primary" id="saveBtn">この価格を履歴に保存</button>
+    </div>
+  </section>
+
+  <!-- ============ 4. 記録 ============ -->
+  <section class="card">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tabHistory" aria-selected="true">この商品の履歴</button>
+      <button type="button" role="tab" id="tabProducts" aria-selected="false">商品一覧</button>
+    </div>
+
+    <div id="paneHistory" style="margin-top:12px">
+      <ul class="rows" id="historyRows" hidden></ul>
+      <p class="empty" id="historyEmpty">コードを入力すると、その商品の価格履歴が出ます。</p>
+    </div>
+
+    <div id="paneProducts" style="margin-top:12px" hidden>
+      <ul class="rows" id="productRows" hidden></ul>
+      <p class="empty" id="productsEmpty">まだ登録がありません。</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>単価は「価格 ÷ 容量」。g・ml は 100 あたりに直して表示します。</p>
+    <p>先頭2桁が 20〜29 のインストアコードは、埋め込まれた価格を 0 に潰したコードで名寄せするので、値引きシールでバーコードが変わっても同じ商品として積み上がります。</p>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+
+<script>
+  /* =====================================================================
+   * ロジック: Node モジュール (src/utils, src/core) の移植。
+   * 判定のしきい値・丸め・名寄せの規則は本体と同じにしてある。
+   * ===================================================================== */
+
+  var GOOD_DEAL_RATIO = 0.95;
+  var HIGH_RATIO = 1.05;
+  var EPS = 1e-9;
+
+  var LABELS = {
+    LOWEST_EVER: '🎉 過去最安値を更新',
+    GOOD_DEAL: '👍 お買い得',
+    AVERAGE: '😐 いつもの値段',
+    HIGH: '⚠️ 高め',
+    FIRST_SCAN: '🆕 はじめての記録'
+  };
+
+  function round(v, d) {
+    var f = Math.pow(10, d === undefined ? 4 : d);
+    return Math.round(v * f) / f;
+  }
+
+  function normalizeCode(code) {
+    return String(code || '').replace(/[\s-]/g, '');
+  }
+
+  function isValidBarcode(code) {
+    var n = normalizeCode(code);
+    return /^\d+$/.test(n) && (n.length === 8 || n.length === 12 || n.length === 13);
+  }
+
+  function isInstoreCode(code) {
+    var n = normalizeCode(code);
+    if (n.length < 2 || !/^\d{2}/.test(n)) return false;
+    var p = Number(n.slice(0, 2));
+    return p >= 20 && p <= 29;
+  }
+
+  function computeCheckDigit(body) {
+    var sum = String(body).split('').map(Number).reverse()
+      .reduce(function (acc, digit, i) { return acc + digit * (i % 2 === 0 ? 3 : 1); }, 0);
+    return (10 - (sum % 10)) % 10;
+  }
+
+  /* 価格埋め込み13桁: 2F | 商品コード5桁 | 価格5桁 | CD */
+  var LAYOUT = { prefixLen: 2, item: [2, 7], value: [7, 12], length: 13 };
+
+  function parseInstoreCode(code) {
+    var n = normalizeCode(code);
+    if (!/^\d+$/.test(n) || !isInstoreCode(n) || n.length !== LAYOUT.length) return null;
+    var masked = n.slice(0, LAYOUT.value[0]) + '00000' + n.slice(LAYOUT.value[1]);
+    var body = masked.slice(0, -1);
+    return {
+      prefix: n.slice(0, 2),
+      itemCode: n.slice(LAYOUT.item[0], LAYOUT.item[1]),
+      price: Number(n.slice(LAYOUT.value[0], LAYOUT.value[1])),
+      checkDigit: n.slice(12),
+      canonicalCode: body + String(computeCheckDigit(body)),
+      raw: n
+    };
+  }
+
+  function toLookupKey(code) {
+    var n = normalizeCode(code);
+    var parsed = parseInstoreCode(n);
+    return parsed ? parsed.canonicalCode : n;
+  }
+
+  /**
+   * 価格判定。history は [{price, qty, store, at}]。
+   * qty 指定時は単価、未指定なら総額で比較する。
+   */
+  function evaluatePrice(history, currentPrice, currentQty) {
+    var useUnit = currentQty !== null && currentQty !== undefined && currentQty > 0;
+    var current = round(useUnit ? currentPrice / currentQty : currentPrice);
+
+    var comparable = [];
+    for (var i = 0; i < history.length; i++) {
+      var h = history[i];
+      var metric;
+      if (useUnit) {
+        if (!h.qty || h.qty <= 0) continue;   // 500ml と 2L を混ぜない
+        metric = h.price / h.qty;
+      } else {
+        metric = h.price;
+      }
+      if (!isFinite(metric)) continue;
+      comparable.push({ record: h, metric: round(metric) });
+    }
+
+    if (comparable.length === 0) {
+      return {
+        status: 'FIRST_SCAN', current: current, lowest: null, average: null,
+        diff: null, useUnit: useUnit, size: 0, lowestRecord: null
+      };
+    }
+
+    var lowest = comparable.reduce(function (min, e) { return e.metric < min.metric ? e : min; });
+    var sum = comparable.reduce(function (acc, e) { return acc + e.metric; }, 0);
+    var average = round(sum / comparable.length);
+    var diff = average === 0 ? 0 : round(((current - average) / average) * 100, 1);
+
+    var status;
+    if (current < lowest.metric - EPS) status = 'LOWEST_EVER';
+    else if (current <= average * GOOD_DEAL_RATIO + EPS) status = 'GOOD_DEAL';
+    else if (current > average * HIGH_RATIO + EPS) status = 'HIGH';
+    else status = 'AVERAGE';
+
+    return {
+      status: status, current: current, lowest: lowest.metric, average: average,
+      diff: diff, useUnit: useUnit, size: comparable.length, lowestRecord: lowest.record
+    };
+  }
+
+  /* =====================================================================
+   * 表示ヘルパ
+   * ===================================================================== */
+
+  var PER_100 = { g: true, ml: true };
+
+  function yen(v) {
+    if (v === null || v === undefined) return '—';
+    var r = Math.round(v * 100) / 100;
+    var s = Number.isInteger(r) ? String(r) : r.toFixed(2);
+    return '¥' + s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  /** 単価を日本の値札の流儀（100gあたり）に直す。 */
+  function unitDisplay(value, useUnit, unit) {
+    if (value === null || value === undefined) return { amount: '—', suffix: '' };
+    if (!useUnit) return { amount: yen(value), suffix: '総額' };
+    if (PER_100[unit]) return { amount: yen(value * 100), suffix: '/ 100' + unit };
+    return { amount: yen(value), suffix: '/ 1' + unit };
+  }
+
+  function formatDate(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    return (d.getMonth() + 1) + '/' + d.getDate();
+  }
+
+  /* =====================================================================
+   * 保存層: db capability があればそれ、なければ localStorage。
+   * products/<名寄せキー> = {janCode, name, unit, isInstore, createdAt, history:[...]}
+   * ===================================================================== */
+
+  var LS_KEY = 'tanka-watch-products';
+
+  var store = {
+    mode: 'local',
+    db: null,
+    products: {},      // key -> product
+    onChange: function () {}
+  };
+
+  function readLocal() {
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function writeLocal(products) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(products)); } catch (e) { /* 保存できなくても続行 */ }
+  }
+
+  async function saveProduct(key, product) {
+    store.products[key] = product;
+    if (store.mode === 'db' && store.db) {
+      await store.db.collection('products').doc(key).set(product);
+    } else {
+      writeLocal(store.products);
+      store.onChange();
+    }
+  }
+
+  async function initStore() {
+    store.products = readLocal();
+    store.onChange();
+
+    var db = null;
+    try { db = await (window.claude && window.claude.use ? window.claude.use('db') : null); } catch (e) { db = null; }
+
+    if (!db) {
+      setStoreState('local', 'この端末に保存');
+      return;
+    }
+
+    store.db = db;
+    store.mode = 'db';
+    setStoreState('live', '同期中');
+
+    db.collection('products').onSnapshot(function (snap) {
+      var next = {};
+      snap.docs.forEach(function (doc) {
+        var data = doc.data();
+        if (data) next[doc.id] = data;
+      });
+      store.products = next;
+      store.onChange();
+    }, function () {
+      setStoreState('local', 'この端末に保存');
+      store.mode = 'local';
+      store.products = readLocal();
+      store.onChange();
+    });
+  }
+
+  function setStoreState(kind, text) {
+    var dot = document.getElementById('dot');
+    dot.className = 'dot ' + kind;
+    document.getElementById('storeState').textContent = text;
+  }
+
+  /* =====================================================================
+   * 画面
+   * ===================================================================== */
+
+  var el = {};
+  ['code', 'codeHint', 'breakdown', 'digits', 'breakdownNote', 'known', 'knownName', 'knownCount',
+   'nameField', 'name', 'price', 'pricePrefill', 'qty', 'unit', 'store', 'checkBtn',
+   'verdictWrap', 'verdict', 'verdictLabel', 'verdictPrice', 'verdictMeta', 'verdictNote', 'saveBtn',
+   'tabHistory', 'tabProducts', 'paneHistory', 'paneProducts',
+   'historyRows', 'historyEmpty', 'productRows', 'productsEmpty',
+   'photoBtn', 'photoInput'].forEach(function (id) { el[id] = document.getElementById(id); });
+
+  var state = { key: null, parsed: null, evaluation: null };
+
+  var SAMPLES = [
+    { name: 'サントリー 天然水 550ml', best: 0.16, unit: 'ml', n: 4 },
+    { name: '国産豚バラ肉', best: 2.58, unit: 'g', n: 3 }
+  ];
+
+  function currentProduct() {
+    return state.key ? store.products[state.key] || null : null;
+  }
+
+  function currentUnit() {
+    return el.unit.value;
+  }
+
+  /* ---- コード入力 ---- */
+
+  function onCodeChange() {
+    var raw = normalizeCode(el.code.value);
+    state.evaluation = null;
+    el.verdictWrap.hidden = true;
+
+    if (!raw) {
+      state.key = null;
+      state.parsed = null;
+      el.breakdown.hidden = true;
+      el.codeHint.className = 'hint';
+      el.codeHint.textContent = '数字を入力するか、値札のバーコードを撮影してください。';
+      renderProductArea();
+      return;
+    }
+
+    state.parsed = parseInstoreCode(raw);
+    state.key = toLookupKey(raw);
+
+    if (!isValidBarcode(raw)) {
+      el.codeHint.className = 'hint error';
+      el.codeHint.textContent = raw.length + '桁です。JANコードは8桁か13桁。数字だけ入れてください。';
+      el.breakdown.hidden = true;
+      renderProductArea();
+      return;
+    }
+
+    el.codeHint.className = 'hint';
+    el.codeHint.textContent = isInstoreCode(raw)
+      ? 'インストアコード（店内で採番された商品）。商品名は手入力です。'
+      : 'JANコード。商品名は初回だけ手入力してください。';
+
+    renderBreakdown();
+    renderProductArea();
+  }
+
+  function renderBreakdown() {
+    var p = state.parsed;
+    if (!p) { el.breakdown.hidden = true; return; }
+
+    el.breakdown.hidden = false;
+    el.digits.innerHTML = '';
+
+    [['', p.prefix, '種別'],
+     ['is-item', p.itemCode, '商品コード'],
+     ['is-value', String(p.price).padStart(5, '0'), '価格'],
+     ['', p.checkDigit, 'CD']].forEach(function (parts) {
+      var seg = document.createElement('div');
+      seg.className = 'seg ' + parts[0];
+      var b = document.createElement('b');
+      b.textContent = parts[1];
+      var s = document.createElement('small');
+      s.textContent = parts[2];
+      seg.appendChild(b);
+      seg.appendChild(s);
+      el.digits.appendChild(seg);
+    });
+
+    el.breakdownNote.textContent = '埋め込み価格 ' + yen(p.price) + '。名寄せキー ' + p.canonicalCode
+      + ' として記録するので、値引きでコードが変わっても同じ商品に積み上がります。';
+
+    if (el.price.value === '' || el.price.dataset.prefilled === '1') {
+      el.price.value = String(p.price);
+      el.price.dataset.prefilled = '1';
+      el.pricePrefill.hidden = false;
+    }
+  }
+
+  function renderProductArea() {
+    var product = currentProduct();
+
+    if (product) {
+      el.known.hidden = false;
+      el.knownName.textContent = product.name;
+      el.knownCount.textContent = (product.history || []).length + '件の記録';
+      el.nameField.hidden = true;
+      el.name.value = product.name;
+      if (product.unit) el.unit.value = product.unit;
+    } else {
+      el.known.hidden = true;
+      el.nameField.hidden = !state.key;
+      if (!state.key) el.name.value = '';
+    }
+
+    renderHistory();
+  }
+
+  /* ---- 判定 ---- */
+
+  function check() {
+    var raw = normalizeCode(el.code.value);
+    if (!raw) { flash('バーコードを入力してください。'); return; }
+
+    var price = Number(el.price.value);
+    if (!el.price.value || !isFinite(price) || price < 0) { flash('価格を入力してください。'); return; }
+
+    var name = (currentProduct() && currentProduct().name) || el.name.value.trim();
+    if (!name) { flash('商品名を入力してください。'); return; }
+
+    var qtyRaw = el.qty.value;
+    var qty = qtyRaw === '' ? null : Number(qtyRaw);
+    if (qty !== null && (!isFinite(qty) || qty <= 0)) { flash('容量は0より大きい数で入れてください。'); return; }
+
+    var product = currentProduct();
+    var history = product ? (product.history || []) : [];
+
+    state.evaluation = evaluatePrice(history, price, qty);
+    renderVerdict(state.evaluation, qty);
+  }
+
+  function flash(message) {
+    el.codeHint.className = 'hint error';
+    el.codeHint.textContent = message;
+  }
+
+  function renderVerdict(ev, qty) {
+    var unit = currentUnit();
+    el.verdictWrap.hidden = false;
+    el.verdict.className = 'verdict s-' + ev.status;
+    el.verdictLabel.textContent = LABELS[ev.status];
+
+    var cur = unitDisplay(ev.current, ev.useUnit, unit);
+    el.verdictPrice.innerHTML = '';
+    var amount = document.createElement('span');
+    amount.textContent = cur.amount;
+    var suffix = document.createElement('em');
+    suffix.textContent = cur.suffix;
+    el.verdictPrice.appendChild(amount);
+    el.verdictPrice.appendChild(suffix);
+
+    el.verdictMeta.innerHTML = '';
+    if (ev.size > 0) {
+      var low = unitDisplay(ev.lowest, ev.useUnit, unit);
+      var avg = unitDisplay(ev.average, ev.useUnit, unit);
+      [['これまでの最安', low.amount],
+       ['平均', avg.amount],
+       ['平均との差', (ev.diff > 0 ? '+' : '') + ev.diff + '%']].forEach(function (pair) {
+        var box = document.createElement('div');
+        var dt = document.createElement('dt');
+        dt.textContent = pair[0];
+        var dd = document.createElement('dd');
+        dd.textContent = pair[1];
+        box.appendChild(dt);
+        box.appendChild(dd);
+        el.verdictMeta.appendChild(box);
+      });
+      el.verdictMeta.hidden = false;
+    } else {
+      el.verdictMeta.hidden = true;
+    }
+
+    var note;
+    if (ev.size === 0) {
+      note = ev.useUnit && (currentProduct() && (currentProduct().history || []).length)
+        ? '過去の記録に容量が入っていないので、単価では比べられませんでした。今回を基準にします。'
+        : 'これが最初の記録です。次に同じ商品をスキャンすると、この値段と比べます。';
+    } else {
+      var src = ev.lowestRecord;
+      note = '過去' + ev.size + '件と比較' + (src && src.store ? '（最安は' + src.store + '）' : '')
+        + '。' + (ev.useUnit ? '容量で割った単価で比べています。' : '容量を入れると単価で比べます。');
+    }
+    el.verdictNote.textContent = note;
+
+    el.saveBtn.disabled = false;
+    el.saveBtn.textContent = 'この価格を履歴に保存';
+  }
+
+  /* ---- 保存 ---- */
+
+  async function save() {
+    if (!state.evaluation || !state.key) return;
+
+    var existing = currentProduct();
+    var qtyRaw = el.qty.value;
+    var qty = qtyRaw === '' ? null : Number(qtyRaw);
+    var entry = {
+      price: Number(el.price.value),
+      qty: qty,
+      unit: qty === null ? null : currentUnit(),
+      store: el.store.value.trim() || null,
+      at: new Date().toISOString()
+    };
+
+    var product = {
+      janCode: state.key,
+      name: (existing && existing.name) || el.name.value.trim(),
+      unit: currentUnit(),
+      isInstore: isInstoreCode(state.key),
+      createdAt: (existing && existing.createdAt) || entry.at,
+      history: (existing ? existing.history || [] : []).concat([entry])
+    };
+
+    el.saveBtn.disabled = true;
+    el.saveBtn.textContent = '保存中…';
+
+    try {
+      await saveProduct(state.key, product);
+      el.saveBtn.textContent = '保存しました';
+      try { localStorage.setItem('tanka-watch-store', entry.store || ''); } catch (e) {}
+      renderProductArea();
+    } catch (e) {
+      el.saveBtn.disabled = false;
+      el.saveBtn.textContent = '保存できませんでした。もう一度';
+    }
+  }
+
+  /* ---- 一覧 ---- */
+
+  function renderHistory() {
+    var product = currentProduct();
+    var history = product ? (product.history || []).slice() : [];
+
+    if (!product || history.length === 0) {
+      el.historyRows.hidden = true;
+      el.historyEmpty.hidden = false;
+      el.historyEmpty.textContent = state.key
+        ? 'この商品の記録はまだありません。'
+        : 'コードを入力すると、その商品の価格履歴が出ます。';
+      return;
+    }
+
+    var unit = product.unit || 'g';
+    var metrics = history.map(function (h) { return h.qty ? h.price / h.qty : null; });
+    var valid = metrics.filter(function (m) { return m !== null; });
+    var best = valid.length ? Math.min.apply(null, valid) : Math.min.apply(null, history.map(function (h) { return h.price; }));
+
+    el.historyEmpty.hidden = true;
+    el.historyRows.hidden = false;
+    el.historyRows.innerHTML = '';
+
+    history.slice().reverse().forEach(function (h) {
+      var metric = h.qty ? h.price / h.qty : h.price;
+      var disp = unitDisplay(round(metric), !!h.qty, h.unit || unit);
+
+      var li = document.createElement('li');
+      var main = document.createElement('div');
+      main.className = 'row-main';
+
+      var title = document.createElement('div');
+      title.className = 'row-title';
+      title.textContent = h.store || '店舗未入力';
+
+      var sub = document.createElement('div');
+      sub.className = 'row-sub';
+      sub.textContent = formatDate(h.at) + ' · ' + yen(h.price) + (h.qty ? ' / ' + h.qty + (h.unit || unit) : '');
+
+      main.appendChild(title);
+      main.appendChild(sub);
+
+      var value = document.createElement('div');
+      value.className = 'row-value' + (Math.abs(metric - best) < 1e-9 ? ' best' : '');
+      value.textContent = disp.amount;
+
+      li.appendChild(main);
+      li.appendChild(value);
+      el.historyRows.appendChild(li);
+    });
+  }
+
+  function renderProducts() {
+    var keys = Object.keys(store.products);
+
+    el.productRows.innerHTML = '';
+
+    if (keys.length === 0) {
+      el.productRows.hidden = false;
+      el.productsEmpty.hidden = false;
+      el.productsEmpty.textContent = 'まだ登録がありません。下は表示例です。';
+      SAMPLES.forEach(function (s) {
+        var li = document.createElement('li');
+        li.className = 'sample';
+        li.innerHTML = '<div class="row-main"><div class="row-title">' + s.name
+          + '<span class="tag">例</span></div><div class="row-sub">' + s.n + '件の記録</div></div>';
+        var v = document.createElement('div');
+        v.className = 'row-value';
+        v.textContent = unitDisplay(s.best, true, s.unit).amount;
+        li.appendChild(v);
+        el.productRows.appendChild(li);
+      });
+      return;
+    }
+
+    el.productsEmpty.hidden = true;
+    el.productRows.hidden = false;
+
+    keys.map(function (k) { return { key: k, p: store.products[k] }; })
+      .sort(function (a, b) { return String(b.p.createdAt).localeCompare(String(a.p.createdAt)); })
+      .forEach(function (item) {
+        var p = item.p;
+        var history = p.history || [];
+        var metrics = history.map(function (h) { return h.qty ? h.price / h.qty : h.price; });
+        var best = metrics.length ? Math.min.apply(null, metrics) : null;
+        var anyQty = history.some(function (h) { return !!h.qty; });
+
+        var li = document.createElement('li');
+        var main = document.createElement('div');
+        main.className = 'row-main';
+
+        var title = document.createElement('div');
+        title.className = 'row-title';
+        title.textContent = p.name;
+        if (p.isInstore) {
+          var tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = '店内';
+          title.appendChild(tag);
+        }
+
+        var sub = document.createElement('div');
+        sub.className = 'row-sub';
+        sub.textContent = history.length + '件 · ' + item.key;
+
+        main.appendChild(title);
+        main.appendChild(sub);
+
+        var value = document.createElement('div');
+        value.className = 'row-value best';
+        value.textContent = best === null ? '—' : unitDisplay(round(best), anyQty, p.unit || 'g').amount;
+
+        li.appendChild(main);
+        li.appendChild(value);
+        li.addEventListener('click', function () {
+          el.code.value = item.key;
+          el.price.dataset.prefilled = '';
+          el.pricePrefill.hidden = true;
+          onCodeChange();
+          selectTab('history');
+          el.code.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        });
+        el.productRows.appendChild(li);
+      });
+  }
+
+  function selectTab(which) {
+    var history = which === 'history';
+    el.tabHistory.setAttribute('aria-selected', String(history));
+    el.tabProducts.setAttribute('aria-selected', String(!history));
+    el.paneHistory.hidden = !history;
+    el.paneProducts.hidden = history;
+  }
+
+  /* ---- 写真からの読み取り ---- */
+
+  async function decodePhoto(file) {
+    var bitmap = await createImageBitmap(file);
+
+    var max = 1600;
+    var scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    if ('BarcodeDetector' in window) {
+      try {
+        var detector = new window.BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
+        });
+        var found = await detector.detect(canvas);
+        if (found && found.length) return found[0].rawValue;
+      } catch (e) { /* ZXing にフォールバック */ }
+    }
+
+    if (window.ZXing) {
+      var img = new Image();
+      img.src = canvas.toDataURL('image/png');
+      await img.decode();
+      var reader = new window.ZXing.BrowserMultiFormatReader();
+      var result = await reader.decodeFromImage(img);
+      return result.getText();
+    }
+
+    return null;
+  }
+
+  async function onPhoto(event) {
+    var file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+
+    el.codeHint.className = 'hint';
+    el.codeHint.textContent = '読み取り中…';
+
+    try {
+      var code = await decodePhoto(file);
+      if (code) {
+        el.code.value = normalizeCode(code);
+        el.price.dataset.prefilled = '';
+        el.pricePrefill.hidden = true;
+        onCodeChange();
+      } else {
+        flash('バーコードを読み取れませんでした。数字を手で入力してください。');
+      }
+    } catch (e) {
+      flash('バーコードを読み取れませんでした。バーコードが画面いっぱいに写るように撮り直すか、数字を手で入力してください。');
+    }
+  }
+
+  /* ---- 起動 ---- */
+
+  store.onChange = function () {
+    renderProducts();
+    renderProductArea();
+  };
+
+  el.code.addEventListener('input', onCodeChange);
+  el.checkBtn.addEventListener('click', check);
+  el.saveBtn.addEventListener('click', save);
+  el.tabHistory.addEventListener('click', function () { selectTab('history'); });
+  el.tabProducts.addEventListener('click', function () { selectTab('products'); });
+  el.photoBtn.addEventListener('click', function () { el.photoInput.click(); });
+  el.photoInput.addEventListener('change', onPhoto);
+  el.price.addEventListener('input', function () {
+    el.price.dataset.prefilled = '';
+    el.pricePrefill.hidden = true;
+  });
+
+  try {
+    var lastStore = localStorage.getItem('tanka-watch-store');
+    if (lastStore) el.store.value = lastStore;
+  } catch (e) { /* 使えなくても続行 */ }
+
+  renderProducts();
+  renderProductArea();
+  initStore();
+</script>
