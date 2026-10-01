@@ -482,6 +482,12 @@ ul.rows {
 
 ul.rows li {
   background: var(--card);
+  padding: 0;
+}
+
+ul.rows li.sample { opacity: .55; }
+
+.row-normal {
   padding: 11px 13px;
   display: flex;
   align-items: baseline;
@@ -489,7 +495,52 @@ ul.rows li {
   gap: 12px;
 }
 
-ul.rows li.sample { opacity: .55; }
+#productRows .row-normal { cursor: pointer; }
+
+.row-del {
+  flex: none;
+  align-self: center;
+  padding: 7px;
+  line-height: 0;
+  color: var(--ink-3);
+  background: transparent;
+  border-color: transparent;
+}
+
+.row-del:hover { color: var(--accent); border-color: var(--line); }
+
+.row-confirm {
+  padding: 9px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--card-2);
+}
+
+.confirm-msg {
+  font-size: 12px;
+  color: var(--ink-2);
+  min-width: 0;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.confirm-actions button {
+  font-size: 13px;
+  padding: 7px 12px;
+}
+
+.btn-danger {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 
 .row-main { min-width: 0; }
 

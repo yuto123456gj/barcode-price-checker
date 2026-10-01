@@ -632,6 +632,8 @@
       var disp = unitDisplay(L.round(metric), !!h.qty, h.unit || unit);
 
       var li = document.createElement('li');
+      var normal = document.createElement('div');
+      normal.className = 'row-normal';
       var main = document.createElement('div');
       main.className = 'row-main';
 
@@ -651,10 +653,60 @@
       value.className = 'row-value' + (Math.abs(metric - best) < 1e-9 ? ' best' : '');
       value.textContent = disp.amount;
 
-      li.appendChild(main);
-      li.appendChild(value);
+      normal.appendChild(main);
+      normal.appendChild(value);
+      li.appendChild(normal);
       el.historyRows.appendChild(li);
     });
+  }
+
+  /** ゴミ箱アイコン。 */
+  function trashIcon() {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '17');
+    svg.setAttribute('height', '17');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.8');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    ['M4 7h16', 'M10 11v6M14 11v6', 'M6 7l1 13h10l1-13', 'M9 7V4h6v3'].forEach(function (d) {
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      svg.appendChild(path);
+    });
+    return svg;
+  }
+
+  /** 開いている確認バーを全部閉じる。確認中は一度にひとつだけにする。 */
+  function closeConfirms() {
+    Array.prototype.forEach.call(el.productRows.children, function (li) {
+      var normal = li.querySelector('.row-normal');
+      var confirm = li.querySelector('.row-confirm');
+      if (normal) normal.hidden = false;
+      if (confirm) confirm.hidden = true;
+    });
+  }
+
+  /** 商品と、その価格履歴をまとめて消す。 */
+  function deleteProduct(key) {
+    delete products[key];
+    persistProducts();
+
+    // 削除したのが今表示中の商品なら、入力欄も judgement もリセットする。
+    if (state.key === key) {
+      el.code.value = '';
+      el.price.value = '';
+      el.price.dataset.prefilled = '';
+      el.pricePrefill.hidden = true;
+      el.name.value = '';
+      onCodeChange();
+    }
+
+    renderProducts();
+    renderProductArea();
   }
 
   function renderProducts() {
@@ -668,6 +720,9 @@
       SAMPLES.forEach(function (s) {
         var li = document.createElement('li');
         li.className = 'sample';
+
+        var normal = document.createElement('div');
+        normal.className = 'row-normal';
 
         var main = document.createElement('div');
         main.className = 'row-main';
@@ -688,8 +743,9 @@
         value.className = 'row-value';
         value.textContent = unitDisplay(s.best, true, s.unit).amount;
 
-        li.appendChild(main);
-        li.appendChild(value);
+        normal.appendChild(main);
+        normal.appendChild(value);
+        li.appendChild(normal);
         el.productRows.appendChild(li);
       });
       return;
@@ -708,6 +764,11 @@
         var anyQty = history.some(function (h) { return !!h.qty; });
 
         var li = document.createElement('li');
+
+        /* --- 通常表示 --- */
+        var normal = document.createElement('div');
+        normal.className = 'row-normal';
+
         var main = document.createElement('div');
         main.className = 'row-main';
 
@@ -732,9 +793,47 @@
         value.className = 'row-value best';
         value.textContent = best === null ? '—' : unitDisplay(L.round(best), anyQty, p.unit || 'g').amount;
 
-        li.appendChild(main);
-        li.appendChild(value);
-        li.addEventListener('click', function () {
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'row-del';
+        del.setAttribute('aria-label', p.name + ' を削除');
+        del.appendChild(trashIcon());
+
+        normal.appendChild(main);
+        normal.appendChild(value);
+        normal.appendChild(del);
+
+        /* --- 削除の確認 --- */
+        var confirm = document.createElement('div');
+        confirm.className = 'row-confirm';
+        confirm.hidden = true;
+
+        var msg = document.createElement('span');
+        msg.className = 'confirm-msg';
+        msg.textContent = history.length ? '履歴' + history.length + '件ごと削除' : '削除しますか';
+
+        var actions = document.createElement('div');
+        actions.className = 'confirm-actions';
+
+        var cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.textContent = 'やめる';
+
+        var yes = document.createElement('button');
+        yes.type = 'button';
+        yes.className = 'btn-danger';
+        yes.textContent = '削除';
+
+        actions.appendChild(cancel);
+        actions.appendChild(yes);
+        confirm.appendChild(msg);
+        confirm.appendChild(actions);
+
+        li.appendChild(normal);
+        li.appendChild(confirm);
+
+        /* --- 操作 --- */
+        normal.addEventListener('click', function () {
           el.code.value = item.key;
           el.price.value = '';
           el.price.dataset.prefilled = '';
@@ -743,6 +842,25 @@
           selectTab('history');
           el.code.scrollIntoView({ block: 'center', behavior: 'smooth' });
         });
+
+        del.addEventListener('click', function (event) {
+          event.stopPropagation();   // 行の選択を起こさない
+          closeConfirms();
+          normal.hidden = true;
+          confirm.hidden = false;
+        });
+
+        cancel.addEventListener('click', function (event) {
+          event.stopPropagation();
+          normal.hidden = false;
+          confirm.hidden = true;
+        });
+
+        yes.addEventListener('click', function (event) {
+          event.stopPropagation();
+          deleteProduct(item.key);
+        });
+
         el.productRows.appendChild(li);
       });
   }
