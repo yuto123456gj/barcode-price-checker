@@ -606,6 +606,86 @@
   /* 一覧                                                              */
   /* ---------------------------------------------------------------- */
 
+  /** 鉛筆アイコン。 */
+  function pencilIcon() {
+    return svgIcon(['M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z', 'M14.5 6.5l3 3']);
+  }
+
+  function svgIcon(paths) {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '17');
+    svg.setAttribute('height', '17');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.8');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    paths.forEach(function (d) {
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', d);
+      svg.appendChild(path);
+    });
+    return svg;
+  }
+
+  /** 編集フォームの1項目を組み立てる。 */
+  function editField(labelText, input) {
+    var wrap = document.createElement('div');
+    wrap.className = 'edit-field';
+    var label = document.createElement('label');
+    label.textContent = labelText;
+    var id = 'edit-' + Math.random().toString(36).slice(2, 8);
+    input.id = id;
+    label.setAttribute('for', id);
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function closeHistoryEditors() {
+    Array.prototype.forEach.call(el.historyRows.children, function (li) {
+      var normal = li.querySelector('.row-normal');
+      var edit = li.querySelector('.row-edit');
+      if (normal) normal.hidden = false;
+      if (edit) edit.hidden = true;
+    });
+  }
+
+  /** 履歴1件を書き換える。価格が変われば判定の前提が変わるので結果は閉じる。 */
+  function updateHistoryEntry(index, patch) {
+    var product = currentProduct();
+    if (!product || !product.history || !product.history[index]) return;
+
+    Object.keys(patch).forEach(function (k) { product.history[index][k] = patch[k]; });
+    persistProducts();
+
+    state.evaluation = null;
+    el.verdictWrap.hidden = true;
+
+    renderHistory();
+    renderProducts();
+    renderProductArea();
+  }
+
+  /** 履歴1件を消す。最後の1件を消しても商品自体は残す。 */
+  function deleteHistoryEntry(index) {
+    var product = currentProduct();
+    if (!product || !product.history) return;
+
+    product.history.splice(index, 1);
+    persistProducts();
+
+    state.evaluation = null;
+    el.verdictWrap.hidden = true;
+
+    renderHistory();
+    renderProducts();
+    renderProductArea();
+  }
+
   function renderHistory() {
     var product = currentProduct();
     var history = product ? (product.history || []) : [];
@@ -627,57 +707,175 @@
     el.historyRows.hidden = false;
     el.historyRows.innerHTML = '';
 
-    history.slice().reverse().forEach(function (h) {
-      var metric = h.qty ? h.price / h.qty : h.price;
-      var disp = unitDisplay(L.round(metric), !!h.qty, h.unit || unit);
+    // 表示は新しい順。書き換えには元の配列の添字が要るので一緒に持ち回す。
+    history.map(function (h, index) { return { h: h, index: index }; })
+      .reverse()
+      .forEach(function (item) {
+        var h = item.h;
+        var metric = h.qty ? h.price / h.qty : h.price;
+        var disp = unitDisplay(L.round(metric), !!h.qty, h.unit || unit);
 
-      var li = document.createElement('li');
-      var normal = document.createElement('div');
-      normal.className = 'row-normal';
-      var main = document.createElement('div');
-      main.className = 'row-main';
+        var li = document.createElement('li');
 
-      var title = document.createElement('div');
-      title.className = 'row-title';
-      title.textContent = h.store || '店舗未入力';
+        /* --- 通常表示 --- */
+        var normal = document.createElement('div');
+        normal.className = 'row-normal';
 
-      var sub = document.createElement('div');
-      sub.className = 'row-sub';
-      sub.textContent = formatDate(h.at) + ' · ' + yen(h.price)
-        + (h.qty ? ' / ' + h.qty + (h.unit || unit) : '');
+        var main = document.createElement('div');
+        main.className = 'row-main';
 
-      main.appendChild(title);
-      main.appendChild(sub);
+        var title = document.createElement('div');
+        title.className = 'row-title';
+        title.textContent = h.store || '店舗未入力';
 
-      var value = document.createElement('div');
-      value.className = 'row-value' + (Math.abs(metric - best) < 1e-9 ? ' best' : '');
-      value.textContent = disp.amount;
+        var sub = document.createElement('div');
+        sub.className = 'row-sub';
+        sub.textContent = formatDate(h.at) + ' · ' + yen(h.price)
+          + (h.qty ? ' / ' + h.qty + (h.unit || unit) : '');
 
-      normal.appendChild(main);
-      normal.appendChild(value);
-      li.appendChild(normal);
-      el.historyRows.appendChild(li);
-    });
+        main.appendChild(title);
+        main.appendChild(sub);
+
+        var value = document.createElement('div');
+        value.className = 'row-value' + (Math.abs(metric - best) < 1e-9 ? ' best' : '');
+        value.textContent = disp.amount;
+
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'row-del';
+        editBtn.setAttribute('aria-label', formatDate(h.at) + 'の記録を編集');
+        editBtn.appendChild(pencilIcon());
+
+        normal.appendChild(main);
+        normal.appendChild(value);
+        normal.appendChild(editBtn);
+
+        /* --- 編集フォーム --- */
+        var edit = document.createElement('div');
+        edit.className = 'row-edit';
+        edit.hidden = true;
+
+        var priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.inputMode = 'numeric';
+        priceInput.min = '0';
+        priceInput.step = '1';
+        priceInput.value = String(h.price);
+
+        var storeInput = document.createElement('input');
+        storeInput.type = 'text';
+        storeInput.autocomplete = 'off';
+        storeInput.placeholder = '未入力';
+        storeInput.value = h.store || '';
+
+        var qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.inputMode = 'decimal';
+        qtyInput.min = '0';
+        qtyInput.step = 'any';
+        qtyInput.placeholder = 'なし';
+        qtyInput.value = h.qty === null || h.qty === undefined ? '' : String(h.qty);
+
+        var unitSelect = document.createElement('select');
+        ['g', 'ml', '個', '枚'].forEach(function (u) {
+          var option = document.createElement('option');
+          option.value = u;
+          option.textContent = u;
+          unitSelect.appendChild(option);
+        });
+        unitSelect.value = h.unit || unit;
+
+        var grid = document.createElement('div');
+        grid.className = 'edit-grid';
+        grid.appendChild(editField('価格（円）', priceInput));
+        grid.appendChild(editField('店舗', storeInput));
+        grid.appendChild(editField('容量・個数', qtyInput));
+        grid.appendChild(editField('単位', unitSelect));
+
+        var error = document.createElement('p');
+        error.className = 'edit-error';
+        error.hidden = true;
+
+        var actions = document.createElement('div');
+        actions.className = 'edit-actions';
+
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'edit-delete';
+        delBtn.textContent = 'この記録を削除';
+
+        var cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.textContent = 'やめる';
+
+        var saveBtn = document.createElement('button');
+        saveBtn.type = 'button';
+        saveBtn.className = 'btn-save';
+        saveBtn.textContent = '保存';
+
+        actions.appendChild(delBtn);
+        actions.appendChild(cancelBtn);
+        actions.appendChild(saveBtn);
+
+        edit.appendChild(grid);
+        edit.appendChild(error);
+        edit.appendChild(actions);
+
+        li.appendChild(normal);
+        li.appendChild(edit);
+
+        /* --- 操作 --- */
+        editBtn.addEventListener('click', function () {
+          closeHistoryEditors();
+          normal.hidden = true;
+          edit.hidden = false;
+          priceInput.focus({ preventScroll: true });
+        });
+
+        cancelBtn.addEventListener('click', function () {
+          normal.hidden = false;
+          edit.hidden = true;
+        });
+
+        delBtn.addEventListener('click', function () {
+          if (delBtn.dataset.armed === '1') {
+            deleteHistoryEntry(item.index);
+            return;
+          }
+          delBtn.dataset.armed = '1';
+          delBtn.textContent = '本当に削除';
+        });
+
+        saveBtn.addEventListener('click', function () {
+          var price = Number(priceInput.value);
+          if (priceInput.value === '' || !isFinite(price) || price < 0) {
+            error.hidden = false;
+            error.textContent = '価格は0以上の数で入れてください。';
+            return;
+          }
+
+          var qty = qtyInput.value === '' ? null : Number(qtyInput.value);
+          if (qty !== null && (!isFinite(qty) || qty <= 0)) {
+            error.hidden = false;
+            error.textContent = '容量は0より大きい数で入れてください。空にすると総額で比べます。';
+            return;
+          }
+
+          updateHistoryEntry(item.index, {
+            price: price,
+            qty: qty,
+            unit: qty === null ? null : unitSelect.value,
+            store: storeInput.value.trim() || null
+          });
+        });
+
+        el.historyRows.appendChild(li);
+      });
   }
 
   /** ゴミ箱アイコン。 */
   function trashIcon() {
-    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', '17');
-    svg.setAttribute('height', '17');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '1.8');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
-    svg.setAttribute('aria-hidden', 'true');
-    ['M4 7h16', 'M10 11v6M14 11v6', 'M6 7l1 13h10l1-13', 'M9 7V4h6v3'].forEach(function (d) {
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', d);
-      svg.appendChild(path);
-    });
-    return svg;
+    return svgIcon(['M4 7h16', 'M10 11v6M14 11v6', 'M6 7l1 13h10l1-13', 'M9 7V4h6v3']);
   }
 
   /** 開いている確認バーを全部閉じる。確認中は一度にひとつだけにする。 */

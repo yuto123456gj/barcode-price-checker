@@ -1,7 +1,7 @@
 /* 売り場は電波が悪いので、アプリ本体をキャッシュしてオフラインでも開けるようにする。
    記録は localStorage なので、オフラインでもスキャンから保存まで通る。 */
 
-var CACHE = 'tanka-watch-v3';
+var CACHE = 'tanka-watch-v4';
 var ASSETS = [
   './',
   'index.html',

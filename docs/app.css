@@ -542,6 +542,74 @@ ul.rows li.sample { opacity: .55; }
   color: #fff;
 }
 
+/* ---- 履歴1件の編集 ---- */
+.row-edit {
+  padding: 12px 13px;
+  background: var(--card-2);
+  display: grid;
+  gap: 10px;
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.edit-field { display: grid; gap: 4px; min-width: 0; }
+
+.edit-field label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-2);
+  letter-spacing: .04em;
+}
+
+.edit-field input,
+.edit-field select {
+  padding: 8px 10px;
+  font-size: 15px;
+}
+
+.edit-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.edit-actions button {
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.edit-delete {
+  margin-right: auto;
+  color: var(--accent);
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 0;
+}
+
+.edit-delete[data-armed="1"] {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  padding-inline: 12px;
+}
+
+.btn-save {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
 .row-main { min-width: 0; }
 
 .row-title {
