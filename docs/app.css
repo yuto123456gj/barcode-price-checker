@@ -357,7 +357,7 @@ button[aria-pressed="true"] {
 
 .known {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   padding: 10px 12px;
@@ -366,8 +366,33 @@ button[aria-pressed="true"] {
   border: 1px solid var(--line-2);
 }
 
+.known-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
 .known strong { font-size: 15px; font-weight: 700; }
 .known span { font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+
+.known-delete {
+  flex: none;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  color: var(--ink-3);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.known-delete[data-armed="1"] {
+  color: #fff;
+  font-weight: 700;
+  background: var(--accent);
+  border-color: var(--accent);
+}
 
 /* ---- verdict ---- */
 .verdict {

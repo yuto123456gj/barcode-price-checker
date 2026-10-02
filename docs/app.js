@@ -75,7 +75,7 @@
   ['dot', 'storeState', 'viewport', 'video', 'viewportIdle', 'frame', 'laser', 'diag',
    'scanBtn', 'torchBtn', 'photoBtn', 'photoInput',
    'code', 'codeHint', 'breakdown', 'digits', 'breakdownNote',
-   'known', 'knownName', 'knownCount', 'nameField', 'name',
+   'known', 'knownName', 'knownCount', 'knownDelete', 'nameField', 'name',
    'price', 'pricePrefill', 'qty', 'unit', 'store', 'checkBtn',
    'verdictWrap', 'verdict', 'verdictLabel', 'verdictPrice', 'verdictMeta', 'verdictNote', 'saveBtn',
    'tabHistory', 'tabProducts', 'paneHistory', 'paneProducts',
@@ -464,6 +464,12 @@
     }
   }
 
+  /** 商品カードの削除ボタンを「押す前」の状態に戻す。 */
+  function disarmKnownDelete() {
+    el.knownDelete.dataset.armed = '';
+    el.knownDelete.textContent = 'この商品を削除';
+  }
+
   function renderProductArea() {
     var product = currentProduct();
 
@@ -474,6 +480,7 @@
       el.nameField.hidden = true;
       el.name.value = product.name;
       if (product.unit) el.unit.value = product.unit;
+      disarmKnownDelete();
     } else {
       el.known.hidden = true;
       el.nameField.hidden = !state.key;
@@ -1081,6 +1088,18 @@
   el.code.addEventListener('input', onCodeChange);
   el.checkBtn.addEventListener('click', check);
   el.saveBtn.addEventListener('click', save);
+  el.knownDelete.addEventListener('click', function () {
+    if (!state.key) return;
+    // 1回目は確認、2回目で実行。押し間違いで消えないようにする。
+    if (el.knownDelete.dataset.armed === '1') {
+      deleteProduct(state.key);
+      disarmKnownDelete();
+      return;
+    }
+    el.knownDelete.dataset.armed = '1';
+    el.knownDelete.textContent = '本当に削除';
+  });
+
   el.tabHistory.addEventListener('click', function () { selectTab('history'); });
   el.tabProducts.addEventListener('click', function () { selectTab('products'); });
   el.price.addEventListener('input', function () {
